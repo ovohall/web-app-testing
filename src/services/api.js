@@ -1,29 +1,7 @@
 // API Service for GSNSD
 
-// Determine the API URL based on environment
-const getApiUrl = () => {
-  // Check for environment variable first
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
-  }
-  
-  // In browser, try to determine the API URL
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location
-    
-    // If running locally
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5000/api'
-    }
-    
-    // For cloud/remote environments, try port 5000 on same host
-    return `${protocol}//${hostname}:5000/api`
-  }
-  
-  return 'http://localhost:5000/api'
-}
-
-const API_URL = getApiUrl()
+// Use relative URL - works when frontend is served from same server as backend
+const API_URL = '/api'
 console.log('🔌 API URL:', API_URL)
 
 // Token management

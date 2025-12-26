@@ -3,9 +3,15 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 
 // Load environment variables
 dotenv.config()
+
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 // Import routes
 import authRoutes from './routes/auth.routes.js'
@@ -23,7 +29,8 @@ const PORT = process.env.PORT || 5000
 
 // Middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Disable for development
 }))
 app.use(cors({
   origin: true, // Allow all origins in development
@@ -32,6 +39,10 @@ app.use(cors({
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files from frontend build
+const distPath = join(__dirname, '../../dist')
+app.use(express.static(distPath))
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -53,12 +64,17 @@ app.use('/api/presences', presenceRoutes)
 app.use('/api/paiements', paiementRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Route not found' 
-  })
+// For SPA - serve index.html for non-API routes
+app.get('*', (req, res, next) => {
+  // If it's an API route, return 404 JSON
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ 
+      success: false, 
+      message: 'Route not found' 
+    })
+  }
+  // Otherwise serve the SPA
+  res.sendFile(join(__dirname, '../../dist/index.html'))
 })
 
 // Global error handler
