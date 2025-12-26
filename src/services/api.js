@@ -1,7 +1,17 @@
 // API Service for GSNSD
 
-// Use relative URL - works when frontend is served from same server as backend
-const API_URL = '/api'
+// Determine the API URL
+const getApiUrl = () => {
+  // Check for environment variable (set in Vercel dashboard)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // Default to relative URL (works when served from same server)
+  return '/api'
+}
+
+const API_URL = getApiUrl()
 console.log('🔌 API URL:', API_URL)
 
 // Token management

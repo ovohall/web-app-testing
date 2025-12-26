@@ -27,6 +27,22 @@ import dashboardRoutes from './routes/dashboard.routes.js'
 const app = express()
 const PORT = process.env.PORT || 5000
 
+// Auto-initialize database on first run
+import { query } from './config/database.js'
+const initDbOnStartup = async () => {
+  try {
+    // Check if users table exists
+    const result = await query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')")
+    if (!result.rows[0].exists) {
+      console.log('📦 First run detected, initializing database...')
+      const { default: initDb } = await import('./config/initDb.js')
+    }
+  } catch (error) {
+    console.log('⚠️ Database check failed, will try to initialize:', error.message)
+  }
+}
+initDbOnStartup()
+
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
