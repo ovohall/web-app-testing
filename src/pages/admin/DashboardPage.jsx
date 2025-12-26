@@ -1,511 +1,323 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Users,
-  GraduationCap,
-  UserCheck,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  CheckCircle,
-  ChevronRight,
-  Bell,
-  FileText,
-  Clock,
-  CreditCard,
-  UserPlus,
-  Settings,
-  BarChart3,
-  PieChart,
-  Activity,
-  Target,
-  Award
+import { 
+  Users, GraduationCap, UserCheck, Wallet, TrendingUp, 
+  Calendar, Bell, AlertTriangle, CheckCircle, Clock,
+  Target, Heart, Trophy, Handshake, Plus, FileText, Settings
 } from 'lucide-react'
-import { Card, Badge, Button, StatCard } from '../../components/common'
 import { useAuth } from '../../context/AuthContext'
-import { VALEURS, NIVEAUX_PRESCOLAIRE, NIVEAUX_ELEMENTAIRE } from '../../utils/constants'
-
-// Données de démonstration
-const STATS = {
-  effectifTotal: 285,
-  prescolaire: 85,
-  elementaire: 200,
-  tauxPresence: 94.5,
-  tauxReussite: 98,
-  recettesMois: 4250000,
-  impayes: 850000,
-  enseignants: 15
-}
-
-const PRESENCES_PAR_NIVEAU = [
-  { niveau: 'PS', presents: 22, total: 25 },
-  { niveau: 'MS', presents: 28, total: 30 },
-  { niveau: 'GS', presents: 27, total: 30 },
-  { niveau: 'CP', presents: 32, total: 35 },
-  { niveau: 'CE1', presents: 38, total: 40 },
-  { niveau: 'CE2', presents: 36, total: 40 },
-  { niveau: 'CM1', presents: 34, total: 38 },
-  { niveau: 'CM2', presents: 45, total: 47 }
-]
-
-const PAIEMENTS_RECENTS = [
-  { id: 1, eleve: 'Mamadou Diallo', classe: 'CM2 A', montant: 35000, type: 'Scolarité', date: '2024-12-26', mode: 'Orange Money' },
-  { id: 2, eleve: 'Fatou Ndiaye', classe: 'CE1 B', montant: 30000, type: 'Scolarité', date: '2024-12-26', mode: 'Wave' },
-  { id: 3, eleve: 'Ibrahima Sow', classe: 'MS', montant: 25000, type: 'Cantine', date: '2024-12-25', mode: 'Espèces' }
-]
-
-const IMPAYES = [
-  { id: 1, eleve: 'Aminata Fall', classe: 'CM1 A', montant: 105000, moisDus: 3 },
-  { id: 2, eleve: 'Ousmane Gueye', classe: 'CE2 B', montant: 70000, moisDus: 2 },
-  { id: 3, eleve: 'Khady Diop', classe: 'CP A', montant: 35000, moisDus: 1 }
-]
-
-const EVENEMENTS_PROCHAINS = [
-  { id: 1, titre: 'Réunion parents CM2', date: '2024-12-28', heure: '15:00', type: 'Réunion' },
-  { id: 2, titre: 'Conseil des enseignants', date: '2024-12-30', heure: '14:00', type: 'Conseil' },
-  { id: 3, titre: 'Journée portes ouvertes', date: '2025-01-15', heure: '09:00', type: 'Événement' }
-]
-
-const NOTIFICATIONS = [
-  { id: 1, message: '3 nouvelles inscriptions en attente de validation', type: 'info', time: 'Il y a 2h' },
-  { id: 2, message: '5 élèves en retard ce matin', type: 'warning', time: 'Il y a 3h' },
-  { id: 3, message: 'Nouveau paiement reçu - 35 000 FCFA', type: 'success', time: 'Il y a 4h' }
-]
-
-const INDICATEURS_VALEURS = [
-  { valeur: 'Engagement', score: 85, description: 'Participation des parents aux réunions' },
-  { valeur: 'Persévérance', score: 92, description: 'Taux d\'assiduité des élèves' },
-  { valeur: 'Respect', score: 88, description: 'Comportement et discipline' },
-  { valeur: 'Fierté', score: 95, description: 'Participation aux événements' }
-]
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('fr-SN', {
-    style: 'currency',
-    currency: 'XOF',
-    minimumFractionDigits: 0
-  }).format(amount)
-}
-
-function formatDate(dateStr) {
-  const date = new Date(dateStr)
-  const options = { weekday: 'long', day: 'numeric', month: 'long' }
-  return date.toLocaleDateString('fr-FR', options)
-}
+import { dashboardApi } from '../../services/api'
+import { Card, StatCard, Loader } from '../../components/common'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
-  const [currentTime] = useState(new Date())
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [dashboardData, setDashboardData] = useState(null)
 
-  const totalPresents = PRESENCES_PAR_NIVEAU.reduce((acc, n) => acc + n.presents, 0)
-  const totalEleves = PRESENCES_PAR_NIVEAU.reduce((acc, n) => acc + n.total, 0)
+  useEffect(() => {
+    loadDashboard()
+  }, [])
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true)
+      const response = await dashboardApi.getAdmin()
+      if (response.success) {
+        setDashboardData(response.data)
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err.message || 'Erreur lors du chargement')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('fr-SN', {
+      style: 'currency',
+      currency: 'XOF',
+      minimumFractionDigits: 0
+    }).format(amount || 0)
+  }
+
+  if (loading) {
+    return <Loader size="lg" page />
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Erreur de chargement</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button 
+          onClick={loadDashboard}
+          className="btn-primary"
+        >
+          Réessayer
+        </button>
+      </div>
+    )
+  }
+
+  const data = dashboardData || {
+    effectifs: { total: 0, prescolaire: 0, elementaire: 0 },
+    enseignants: 0,
+    classes: 0,
+    presence: { presents: 0, absents: 0, retards: 0, total: 0, tauxPresence: 0 },
+    finances: { recettesMois: 0, nombrePaiements: 0 },
+    anneeScolaire: '2024-2025'
+  }
+
+  // Quick actions
+  const quickActions = [
+    { label: 'Nouvel élève', icon: Plus, path: '/admin/eleves', color: 'bg-blue-500' },
+    { label: 'Saisir paiement', icon: Wallet, path: '/admin/paiements', color: 'bg-green-500' },
+    { label: 'Rapport', icon: FileText, path: '/admin/rapports', color: 'bg-purple-500' },
+    { label: 'Paramètres', icon: Settings, path: '/admin/parametres', color: 'bg-gray-500' },
+  ]
+
+  // The 4 values
+  const valeurs = [
+    { 
+      nom: 'Engagement', 
+      icon: Handshake, 
+      color: 'text-blue-600 bg-blue-100',
+      description: 'Implication des parents'
+    },
+    { 
+      nom: 'Persévérance', 
+      icon: Target, 
+      color: 'text-orange-600 bg-orange-100',
+      description: 'Assiduité et ponctualité'
+    },
+    { 
+      nom: 'Respect', 
+      icon: Heart, 
+      color: 'text-pink-600 bg-pink-100',
+      description: 'Vivre ensemble'
+    },
+    { 
+      nom: 'Fierté', 
+      icon: Trophy, 
+      color: 'text-yellow-600 bg-yellow-100',
+      description: 'Appartenance à l\'école'
+    },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Message de bienvenue */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl p-6 text-white">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-gsnsd-blue to-gsnsd-blue-dark rounded-2xl p-6 text-white">
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-heading font-bold mb-2">
-              Bienvenue, {user?.prenom || 'Directeur'} ! 👋
+            <h1 className="text-2xl font-bold mb-2">
+              Bienvenue, {user?.prenom} {user?.nom}
             </h1>
-            <p className="text-purple-200">
-              {formatDate(currentTime)} • Tableau de bord administrateur
+            <p className="text-blue-100">
+              {user?.titre || 'Directeur'} • Année scolaire {data.anneeScolaire}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/admin/eleves">
-              <Button className="bg-white text-purple-700 hover:bg-purple-50">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Nouvelle inscription
-              </Button>
-            </Link>
-            <Link to="/admin/parametres">
-              <Button variant="ghost" className="text-white hover:bg-white/10">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </Link>
+          <div className="text-right">
+            <p className="text-sm text-blue-100">
+              {new Date().toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
           </div>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="flex gap-3 mt-6">
+          {quickActions.map((action, index) => (
+            <Link 
+              key={index}
+              to={action.path}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-lg"
+            >
+              <action.icon className="w-4 h-4" />
+              <span className="text-sm font-medium">{action.label}</span>
+            </Link>
+          ))}
         </div>
       </div>
 
-      {/* Statistiques principales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Main Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Effectif total"
-          value={STATS.effectifTotal}
-          subtitle={`${STATS.prescolaire} présco. + ${STATS.elementaire} élém.`}
-          icon={<GraduationCap className="w-6 h-6" />}
-          trend={{ value: 5, isPositive: true }}
+          title="Effectif Total"
+          value={data.effectifs.total}
+          subtitle={`${data.effectifs.prescolaire} préscolaire • ${data.effectifs.elementaire} élémentaire`}
+          icon={<Users className="w-6 h-6" />}
+          color="blue"
         />
         <StatCard
-          title="Présence aujourd'hui"
-          value={`${((totalPresents / totalEleves) * 100).toFixed(1)}%`}
-          subtitle={`${totalPresents}/${totalEleves} élèves`}
+          title="Taux de Présence"
+          value={`${data.presence.tauxPresence}%`}
+          subtitle={`${data.presence.presents} présents aujourd'hui`}
           icon={<UserCheck className="w-6 h-6" />}
-          trend={{ value: 2.3, isPositive: true }}
+          color="green"
+          trend={data.presence.tauxPresence >= 90 ? 'up' : data.presence.tauxPresence >= 80 ? 'neutral' : 'down'}
         />
         <StatCard
-          title="Recettes du mois"
-          value={formatCurrency(STATS.recettesMois)}
-          subtitle="Décembre 2024"
-          icon={<DollarSign className="w-6 h-6" />}
-          trend={{ value: 12, isPositive: true }}
+          title="Recettes du Mois"
+          value={formatCurrency(data.finances.recettesMois)}
+          subtitle={`${data.finances.nombrePaiements} paiements reçus`}
+          icon={<Wallet className="w-6 h-6" />}
+          color="purple"
         />
         <StatCard
-          title="Impayés"
-          value={formatCurrency(STATS.impayes)}
-          subtitle={`${IMPAYES.length} familles`}
-          icon={<AlertCircle className="w-6 h-6" />}
-          trend={{ value: 5, isPositive: false }}
+          title="Enseignants"
+          value={data.enseignants}
+          subtitle={`${data.classes} classes actives`}
+          icon={<GraduationCap className="w-6 h-6" />}
+          color="orange"
         />
       </div>
 
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Colonne principale */}
+        {/* Left Column - 2/3 */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Présences par niveau */}
-          <Card>
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-gsnsd-blue" />
-                Présences par niveau
-              </h2>
-              <Link to="/admin/presences">
-                <Button variant="ghost" size="sm">
-                  Détails <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-                {PRESENCES_PAR_NIVEAU.map((niveau) => {
-                  const pourcentage = (niveau.presents / niveau.total) * 100
-                  return (
-                    <div key={niveau.niveau} className="text-center">
-                      <div className="relative w-12 h-12 mx-auto mb-2">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle
-                            cx="24"
-                            cy="24"
-                            r="20"
-                            stroke="#e5e7eb"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <circle
-                            cx="24"
-                            cy="24"
-                            r="20"
-                            stroke={pourcentage >= 90 ? '#10B981' : pourcentage >= 80 ? '#F59E0B' : '#EF4444'}
-                            strokeWidth="4"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeDasharray={`${pourcentage * 1.26} 126`}
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-bold">{niveau.presents}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs font-medium text-gray-800">{niveau.niveau}</p>
-                      <p className="text-xs text-gray-500">{niveau.total}</p>
-                    </div>
-                  )
-                })}
+          {/* Presence Summary */}
+          <Card title="Présence Aujourd'hui" icon={<UserCheck className="w-5 h-5" />}>
+            {data.presence.total > 0 ? (
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-xl">
+                  <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{data.presence.presents}</p>
+                  <p className="text-sm text-gray-600">Présents</p>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-xl">
+                  <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-red-600">{data.presence.absents}</p>
+                  <p className="text-sm text-gray-600">Absents</p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-xl">
+                  <Clock className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-orange-600">{data.presence.retards}</p>
+                  <p className="text-sm text-gray-600">Retards</p>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-xl">
+                  <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">{data.presence.tauxPresence}%</p>
+                  <p className="text-sm text-gray-600">Taux</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Aucune donnée de présence pour aujourd'hui</p>
+                <p className="text-sm">L'appel n'a pas encore été fait</p>
+              </div>
+            )}
           </Card>
 
-          {/* Paiements récents */}
-          <Card>
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-green-500" />
-                Paiements récents
-              </h2>
-              <Link to="/admin/paiements">
-                <Button variant="ghost" size="sm">
-                  Voir tout <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {PAIEMENTS_RECENTS.map((paiement) => (
-                <div key={paiement.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800">{paiement.eleve}</p>
-                      <p className="text-sm text-gray-500">
-                        {paiement.classe} • {paiement.type} • {paiement.mode}
-                      </p>
-                    </div>
+          {/* Effectifs by Level */}
+          <Card title="Répartition des Effectifs" icon={<Users className="w-5 h-5" />}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">{formatCurrency(paiement.montant)}</p>
-                    <p className="text-xs text-gray-500">{new Date(paiement.date).toLocaleDateString('fr-FR')}</p>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Préscolaire</h3>
+                    <p className="text-sm text-gray-500">PS, MS, GS</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Impayés */}
-          <Card>
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                Impayés à recouvrer
-              </h2>
-              <Link to="/admin/creances">
-                <Button variant="ghost" size="sm">
-                  Gérer <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {IMPAYES.map((impaye) => (
-                <div key={impaye.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                      <AlertCircle className="w-5 h-5 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800">{impaye.eleve}</p>
-                      <p className="text-sm text-gray-500">
-                        {impaye.classe} • {impaye.moisDus} mois de retard
-                      </p>
-                    </div>
+                <p className="text-3xl font-bold text-blue-600">{data.effectifs.prescolaire}</p>
+                <p className="text-sm text-gray-600">élèves inscrits</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                    <GraduationCap className="w-6 h-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-red-600">{formatCurrency(impaye.montant)}</p>
-                    <Button variant="outline" size="sm" className="mt-1">
-                      Relancer
-                    </Button>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Élémentaire</h3>
+                    <p className="text-sm text-gray-500">CP à CM2</p>
                   </div>
                 </div>
-              ))}
+                <p className="text-3xl font-bold text-purple-600">{data.effectifs.elementaire}</p>
+                <p className="text-sm text-gray-600">élèves inscrits</p>
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* Colonne latérale */}
+        {/* Right Column - 1/3 */}
         <div className="space-y-6">
-          {/* Actions rapides */}
-          <Card className="p-4">
-            <h3 className="font-heading font-bold text-gray-800 mb-4">Actions rapides</h3>
+          {/* Quick Links */}
+          <Card title="Accès Rapide" icon={<Settings className="w-5 h-5" />}>
             <div className="space-y-2">
-              <Link to="/admin/eleves">
-                <Button variant="outline" className="w-full justify-start">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Nouvelle inscription
-                </Button>
+              <Link 
+                to="/admin/utilisateurs" 
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <Users className="w-5 h-5 text-blue-500" />
+                <span className="font-medium">Gestion des utilisateurs</span>
               </Link>
-              <Link to="/admin/paiements">
-                <Button variant="outline" className="w-full justify-start">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Enregistrer paiement
-                </Button>
+              <Link 
+                to="/admin/eleves" 
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <GraduationCap className="w-5 h-5 text-green-500" />
+                <span className="font-medium">Liste des élèves</span>
               </Link>
-              <Link to="/admin/communication">
-                <Button variant="outline" className="w-full justify-start">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Envoyer annonce
-                </Button>
-              </Link>
-              <Link to="/admin/rapports">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Générer rapport
-                </Button>
-              </Link>
-            </div>
-          </Card>
-
-          {/* Notifications */}
-          <Card>
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-yellow-500" />
-                Notifications
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {NOTIFICATIONS.map((notif) => (
-                <div key={notif.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      notif.type === 'info' ? 'bg-blue-500' :
-                      notif.type === 'warning' ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`} />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-800">{notif.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Événements à venir */}
-          <Card>
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
+              <Link 
+                to="/admin/classes" 
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition"
+              >
                 <Calendar className="w-5 h-5 text-purple-500" />
-                Événements à venir
-              </h2>
+                <span className="font-medium">Gestion des classes</span>
+              </Link>
+              <Link 
+                to="/admin/paiements" 
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <Wallet className="w-5 h-5 text-orange-500" />
+                <span className="font-medium">Paiements & Finances</span>
+              </Link>
             </div>
-            <div className="divide-y divide-gray-50">
-              {EVENEMENTS_PROCHAINS.map((event) => (
-                <div key={event.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex flex-col items-center justify-center">
-                      <span className="text-xs text-purple-600 font-medium">
-                        {new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric' })}
-                      </span>
-                      <span className="text-xs text-purple-400">
-                        {new Date(event.date).toLocaleDateString('fr-FR', { month: 'short' })}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-800 text-sm">{event.titre}</p>
-                      <p className="text-xs text-gray-500">
-                        <Clock className="w-3 h-3 inline mr-1" />
-                        {event.heure} • {event.type}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          </Card>
+
+          {/* Notifications placeholder */}
+          <Card title="Notifications" icon={<Bell className="w-5 h-5" />}>
+            <div className="text-center py-6 text-gray-500">
+              <Bell className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">Aucune notification</p>
             </div>
           </Card>
         </div>
       </div>
 
-      {/* Indicateurs des 4 valeurs */}
-      <Card>
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="font-heading font-bold text-gray-800 flex items-center gap-2">
-            <Award className="w-5 h-5 text-yellow-500" />
-            Indicateurs des 4 valeurs essentielles
-          </h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {INDICATEURS_VALEURS.map((indicateur, index) => {
-              const valeurInfo = VALEURS[indicateur.valeur.toLowerCase()]
-              return (
-                <div key={index} className="text-center">
-                  <div className="relative w-24 h-24 mx-auto mb-4">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle
-                        cx="48"
-                        cy="48"
-                        r="40"
-                        stroke="#e5e7eb"
-                        strokeWidth="8"
-                        fill="none"
-                      />
-                      <circle
-                        cx="48"
-                        cy="48"
-                        r="40"
-                        stroke={valeurInfo?.couleur || '#4A9FD8'}
-                        strokeWidth="8"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={`${indicateur.score * 2.51} 251`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl">{valeurInfo?.icone}</span>
-                    </div>
-                  </div>
-                  <h3 className="font-heading font-bold text-gray-800">{indicateur.valeur}</h3>
-                  <p className="text-2xl font-bold" style={{ color: valeurInfo?.couleur }}>
-                    {indicateur.score}%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">{indicateur.description}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </Card>
-
-      {/* Statistiques supplémentaires */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-bold text-gray-800">Personnel</h3>
-            <Users className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Enseignants</span>
-              <span className="font-bold text-gray-800">{STATS.enseignants}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Personnel administratif</span>
-              <span className="font-bold text-gray-800">3</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Personnel de service</span>
-              <span className="font-bold text-gray-800">4</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-bold text-gray-800">Taux de réussite</h3>
-            <Target className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="text-center py-4">
-            <div className="text-4xl font-bold text-green-600">{STATS.tauxReussite}%</div>
-            <p className="text-gray-500 mt-2">CFEE 2024</p>
-            <div className="flex items-center justify-center gap-1 mt-2 text-green-600">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">+3% vs 2023</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-bold text-gray-800">Répartition par niveau</h3>
-            <PieChart className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gsnsd-magenta" />
-                <span className="text-gray-600">Préscolaire</span>
+      {/* 4 Values Section */}
+      <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 border">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-gsnsd-magenta" />
+          Nos 4 Valeurs Essentielles
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {valeurs.map((valeur, index) => (
+            <div 
+              key={index}
+              className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition"
+            >
+              <div className={`w-12 h-12 rounded-xl ${valeur.color} flex items-center justify-center mb-3`}>
+                <valeur.icon className="w-6 h-6" />
               </div>
-              <span className="font-bold text-gray-800">{STATS.prescolaire}</span>
+              <h3 className="font-semibold text-gray-800">{valeur.nom}</h3>
+              <p className="text-sm text-gray-500">{valeur.description}</p>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gsnsd-blue" />
-                <span className="text-gray-600">Élémentaire</span>
-              </div>
-              <span className="font-bold text-gray-800">{STATS.elementaire}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-              <div 
-                className="bg-gsnsd-magenta rounded-l-full h-2"
-                style={{ width: `${(STATS.prescolaire / STATS.effectifTotal) * 100}%` }}
-              />
-            </div>
-          </div>
-        </Card>
+          ))}
+        </div>
       </div>
     </div>
   )
