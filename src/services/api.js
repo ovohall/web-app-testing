@@ -1,6 +1,30 @@
 // API Service for GSNSD
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Determine the API URL based on environment
+const getApiUrl = () => {
+  // Check for environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // In browser, try to determine the API URL
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname, port } = window.location
+    
+    // If running locally
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000/api'
+    }
+    
+    // For cloud/remote environments, try port 5000 on same host
+    return `${protocol}//${hostname}:5000/api`
+  }
+  
+  return 'http://localhost:5000/api'
+}
+
+const API_URL = getApiUrl()
+console.log('🔌 API URL:', API_URL)
 
 // Token management
 const getToken = () => localStorage.getItem('accessToken')
@@ -55,6 +79,15 @@ const apiRequest = async (endpoint, options = {}) => {
     return data
   } catch (error) {
     console.error('API Error:', error)
+    
+    // Provide more helpful error message for connection issues
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error(
+        'Impossible de se connecter au serveur. Veuillez vérifier que le backend est démarré sur le port 5000. ' +
+        'Exécutez: cd backend && npm start'
+      )
+    }
+    
     throw error
   }
 }
