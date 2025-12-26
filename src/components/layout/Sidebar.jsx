@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
-  Home, Users, UserPlus, GraduationCap, Building, Calendar, 
+  Home, Users, UserPlus, UserCog, GraduationCap, Building, Calendar, 
   DollarSign, CreditCard, MessageCircle, CalendarDays, BarChart3, 
   Settings, BookOpen, FileText, CheckSquare, Award, MessageSquare,
   ChevronLeft, ChevronRight, LogOut
@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import { SCHOOL_INFO } from '../../utils/constants'
 
 const iconMap = {
-  Home, Users, UserPlus, GraduationCap, Building, Calendar,
+  Home, Users, UserPlus, UserCog, GraduationCap, Building, Calendar,
   DollarSign, CreditCard, MessageCircle, CalendarDays, BarChart3,
   Settings, BookOpen, FileText, CheckSquare, Award, MessageSquare,
 }

@@ -218,6 +218,7 @@ export const NAV_LINKS = {
   ],
   admin: [
     { path: '/admin/tableau-de-bord', label: 'Tableau de bord', icon: 'Home' },
+    { path: '/admin/utilisateurs', label: 'Utilisateurs', icon: 'UserCog' },
     { path: '/admin/eleves', label: 'Élèves', icon: 'Users' },
     { path: '/admin/parents', label: 'Parents', icon: 'UserPlus' },
     { path: '/admin/enseignants', label: 'Enseignants', icon: 'GraduationCap' },

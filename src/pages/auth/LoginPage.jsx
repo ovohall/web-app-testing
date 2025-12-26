@@ -18,17 +18,17 @@ import { SCHOOL_INFO, VALEURS } from '../../utils/constants'
 
 const DEMO_ACCOUNTS = [
   {
-    role: 'Directeur / Admin',
-    email: 'admin@gsnsd.sn',
-    password: 'admin123',
+    role: 'Directeur - Mayare MBAYE',
+    email: 'mayare.mbaye@gsnsd.sn',
+    password: '1234',
     icon: <Shield className="w-5 h-5" />,
     color: 'bg-purple-500',
-    description: 'Accès complet à toutes les fonctionnalités'
+    description: 'Accès complet - Peut créer des comptes et déléguer'
   },
   {
     role: 'Enseignant',
     email: 'enseignant@gsnsd.sn',
-    password: 'enseignant123',
+    password: '1234',
     icon: <Users className="w-5 h-5" />,
     color: 'bg-blue-500',
     description: 'Gestion des classes, notes et présences'
@@ -36,7 +36,7 @@ const DEMO_ACCOUNTS = [
   {
     role: 'Élève',
     email: 'eleve@gsnsd.sn',
-    password: 'eleve123',
+    password: '1234',
     icon: <GraduationCap className="w-5 h-5" />,
     color: 'bg-green-500',
     description: 'Consultation des notes et emploi du temps'

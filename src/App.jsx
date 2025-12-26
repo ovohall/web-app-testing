@@ -26,7 +26,7 @@ import { LoginPage, ForgotPasswordPage } from './pages/auth'
 // Portal pages
 import { DashboardPage as EleveDashboard } from './pages/eleve'
 import { DashboardPage as EnseignantDashboard } from './pages/enseignant'
-import { DashboardPage as AdminDashboard } from './pages/admin'
+import { DashboardPage as AdminDashboard, UsersPage as AdminUsersPage } from './pages/admin'
 
 // Placeholder components for pages not yet created
 function PlaceholderPage({ title }) {
@@ -120,6 +120,7 @@ function App() {
       >
         <Route index element={<Navigate to="tableau-de-bord" replace />} />
         <Route path="tableau-de-bord" element={<AdminDashboard />} />
+        <Route path="utilisateurs" element={<AdminUsersPage />} />
         <Route path="eleves" element={<PlaceholderPage title="Gestion des Élèves" />} />
         <Route path="parents" element={<PlaceholderPage title="Gestion des Parents" />} />
         <Route path="enseignants" element={<PlaceholderPage title="Gestion des Enseignants" />} />
